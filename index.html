@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Attestatsiya Testi | PRO Dark</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- AOS -->
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        neon: '#38bdf8'
+      }
+    }
+  }
+}
+</script>
+</head>
+
+<body class="bg-gradient-to-br from-black via-gray-900 to-black min-h-screen flex items-center justify-center text-white">
+
+<!-- TEST CARD -->
+<div class="relative w-full max-w-3xl p-6 rounded-3xl
+ bg-white/5 backdrop-blur-xl border border-white/10
+ shadow-2xl transition-all duration-500 hover:scale-[1.02]">
+
+  <!-- COUNTER -->
+  <div id="counter" class="text-sm text-gray-400 mb-3"></div>
+
+  <!-- QUESTION -->
+  <h2 id="question"
+    class="text-2xl font-semibold mb-8 leading-relaxed"
+    data-aos="fade-up">
+  </h2>
+
+  <!-- ANSWERS -->
+  <div id="answers" class="space-y-4"></div>
+
+  <!-- NAV -->
+  <div class="flex justify-between mt-10">
+    <button id="prevBtn"
+      class="px-6 py-2 rounded-xl bg-gray-700/40 text-gray-400
+      transition-all duration-300 cursor-not-allowed">
+      ⬅ Orqaga
+    </button>
+
+    <button id="nextBtn"
+      class="px-6 py-2 rounded-xl bg-neon text-black font-semibold
+      transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-neon/50">
+      Oldinga ➡
+    </button>
+  </div>
+</div>
+
+<!-- RESULT MODAL -->
+<div id="resultBox"
+ class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+  <div class="bg-white/5 border border-white/10 backdrop-blur-xl
+   p-8 rounded-3xl w-full max-w-xl scale-95 animate-pulse">
+
+    <h2 class="text-3xl font-bold text-center mb-6">📊 Natija</h2>
+    <p id="score" class="text-lg text-center mb-6"></p>
+
+    <div id="mistakes"
+     class="space-y-2 max-h-56 overflow-y-auto text-sm"></div>
+
+    <button onclick="location.reload()"
+     class="mt-6 w-full py-3 rounded-xl bg-green-500 text-black font-bold
+     transition hover:scale-105">
+      🔄 Qayta boshlash
+    </button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+AOS.init();
+
+const questions = [
+{q:"Boshlang‘ich ta’limning asosiy vazifasi nima?",a:["Fanlarni chuqur o‘rgatish","O‘quvchini imtihonga tayyorlash","Bilim, ko‘nikma va malakalarni shakllantirish","Nazorat ishlari"],c:2},
+{q:"1-sinfda baholash qanday amalga oshiriladi?",a:["Ball bilan","Reyting bilan","Rag‘batlantiruvchi izohlar bilan","Imtihon orqali"],c:2},
+{q:"Darsda interfaol metodning belgisi?",a:["O‘qituvchi gapiradi","O‘quvchi faol","Faqat yozma","Darslik asos"],c:1},
+{q:"Boshlang‘ich sinf o‘qituvchisining muhim sifati?",a:["Qattiqqo‘llik","Mehribonlik","Jiddiylik","Nazorat"],c:1},
+{q:"Didaktik o‘yinlar nima uchun?",a:["Vaqt uchun","Samaradorlik uchun","Baholash","Nazorat"],c:1},
+{q:"1–4 sinf darsi davomiyligi?",a:["30","35","40","45"],c:3},
+{q:"O‘qish darsining maqsadi?",a:["Yodlash","Ifodali o‘qish","Baholash","Nazorat"],c:1},
+{q:"Ko‘rgazmalilik nimaga xizmat qiladi?",a:["Bezash","Tushunishga","Vaqt","Nazorat"],c:1},
+{q:"Rag‘batlantirishning to‘g‘ri yo‘li?",a:["Tanbeh","Solishtirish","Maqtov","Past baho"],c:2},
+{q:"Mustaqil ish qanday bo‘lishi kerak?",a:["Murakkab","Uzoq","Yoshga mos","Nazariy"],c:2},
+
+{q:"Tarbiya jarayonining maqsadi?",a:["Bilim","Shaxs rivoji","Nazorat","Baholash"],c:1},
+{q:"Sinf muhiti qanday bo‘lishi kerak?",a:["Qattiq","Do‘stona","Rasmiy","Sovuq"],c:1},
+{q:"Nutqni rivojlantiruvchi usul?",a:["Yozdirish","Suhbat","Test","Nazorat"],c:1},
+{q:"Fanlar integratsiyasi bu?",a:["Ajratish","Bog‘lash","Bekor","Nazorat"],c:1},
+{q:"Individual yondashuv nima?",a:["Bir xil","Imkoniyatni hisobga olish","Faqat kuchli","Faqat sust"],c:1},
+{q:"Motivatsiya nima uchun?",a:["Baholash","Qiziqtirish","Nazorat","Uyga vazifa"],c:1},
+{q:"Pedagogik etika?",a:["Qattiqlik","Hurmat","Talab","Baholash"],c:1},
+{q:"Fizminutka nima uchun?",a:["Vaqt","Charchoqni kamaytirish","Baholash","Nazorat"],c:1},
+{q:"Matn bilan ishlash bosqichi?",a:["Tahlil","Tayyorlov","Xulosa","Nazorat"],c:1},
+{q:"Yozuv malakasi qachon shakllanadi?",a:["Bir kunda","Bosqichma-bosqich","Imtihonda","O‘zi"],c:1},
+
+{q:"Xatoga munosabat?",a:["Jazo","Tanbeh","To‘g‘ri yo‘naltirish","E’tibor bermaslik"],c:2},
+{q:"Tarbiya kim bilan?",a:["O‘qituvchi","Maktab","Ota-ona bilan","Rahbar"],c:2},
+{q:"Guruh ishlari nimani rivojlantiradi?",a:["Bahoni","Hamkorlikni","Nazorat","Intizom"],c:1},
+{q:"Baholash vazifasi?",a:["Jazo","Solishtirish","Rivojni aniqlash","Reyting"],c:2},
+{q:"AKT nimani oshiradi?",a:["Qiyinchilik","Qiziqish","Nazorat","Yuklama"],c:1},
+{q:"Metod tanlashda nima muhim?",a:["Xohish","Yosh va mavzu","Vaqt","Darslik"],c:1},
+{q:"Mustaqil fikrlash uchun?",a:["Tayyor javob","Muammoli savol","Yozish","Baholash"],c:1},
+{q:"Sinf qoidalari nima uchun?",a:["Jazo","Xavfsizlik","Baholash","Nazorat"],c:1},
+{q:"Qiziqtirish usuli?",a:["Majburlash","Qiziqarli topshiriq","Tanbeh","Solishtirish"],c:1},
+{q:"Dars mustahkamlash qachon?",a:["Oxirida","Jarayonda","Nazoratda","Uyda"],c:1},
+
+{q:"Nutq qaysi fanlarda?",a:["Ona tili","O‘qish","Barcha","Matematika"],c:2},
+{q:"Refleksiya nima?",a:["Baholash","Tahlil","Nazorat","Intizom"],c:1},
+{q:"Samaradorlikni nima oshiradi?",a:["Qattiqlik","To‘g‘ri metod","Uy vazifa","Baholar"],c:1},
+{q:"Shaxsga hurmat?",a:["Tanqid","Qadr","Jazo","Baholash"],c:1},
+{q:"Tarbiya qachon?",a:["Darsdan tashqari","Darsda","Doimiy","Nazorat"],c:2},
+{q:"O‘qituvchi nutqi?",a:["Murakkab","Tushunarli","Tez","Qattiq"],c:1},
+{q:"Ijobiy muhit nima beradi?",a:["Bahoni","Rivoj","Nazorat","Intizom"],c:1},
+{q:"Kommunikativ kompetensiya?",a:["Matematik","Muloqot","Texnik","Jismoniy"],c:1},
+{q:"Kasbiy rivoj?",a:["Bilim","Tajriba","Kompetensiya","Baholar"],c:2},
+{q:"Shaxsiy namuna nimada?",a:["Jazo","Xulq","Baholash","Nazorat"],c:1},
+
+{q:"Dars yakuni nima uchun?",a:["Uyga vazifa","Xulosa","Nazorat","Tanaffus"],c:1},
+{q:"Muvaffaqiyatni e’tirof?",a:["Kibr","Ishonch","Sustlik","Intizom"],c:1},
+{q:"Metodik yondashuv?",a:["Bir xil","Maqsadga mos","Darslik","Nazorat"],c:1},
+{q:"Ota-ona bilan hamkorlik?",a:["Hisobot","Rivoj","Baholash","Nazorat"],c:1},
+{q:"O‘yin faoliyati?",a:["Vaqt","Bilim va ko‘nikma","Intizom","Baho"],c:1}
+];
+
+let index = 0;
+let userAnswers = Array(50).fill(null);
+
+const qEl = document.getElementById("question");
+const aEl = document.getElementById("answers");
+const counter = document.getElementById("counter");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+function render() {
+  counter.textContent = `Savol ${index + 1} / 50`;
+  qEl.textContent = questions[index].q;
+  aEl.innerHTML = "";
+
+  questions[index].a.forEach((text, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = text;
+    btn.className =
+      "w-full p-4 rounded-xl border border-white/10 text-left " +
+      "transition-all duration-300 hover:scale-105 hover:border-neon/60";
+
+    if (userAnswers[index] === i) {
+      btn.classList.add(
+        "bg-neon/20 border-neon shadow-lg shadow-neon/30 scale-105"
+      );
+    }
+
+    btn.onclick = () => {
+      userAnswers[index] = i;
+      render();
+    };
+
+    aEl.appendChild(btn);
+  });
+
+  prevBtn.disabled = index === 0;
+  prevBtn.className = index === 0
+    ? "px-6 py-2 rounded-xl bg-gray-700/40 text-gray-400 cursor-not-allowed"
+    : "px-6 py-2 rounded-xl bg-gray-700 hover:scale-110 transition";
+
+  nextBtn.textContent =
+    index === 49 ? "Testni tugatish ✅" : "Oldinga ➡";
+}
+
+prevBtn.onclick = () => {
+  if (index > 0) {
+    index--;
+    render();
+  }
+};
+
+nextBtn.onclick = () => {
+  if (index === 49) finish();
+  else {
+    index++;
+    render();
+  }
+};
+
+function finish() {
+  let correct = 0;
+  const m = document.getElementById("mistakes");
+  m.innerHTML = "";
+
+  questions.forEach((q, i) => {
+    if (userAnswers[i] === q.c) correct++;
+    else {
+      const d = document.createElement("div");
+      d.className =
+        "p-2 rounded-lg bg-red-500/20 border border-red-500/30";
+      d.textContent = `${i + 1}-savol xato`;
+      m.appendChild(d);
+    }
+  });
+
+  document.getElementById("score").textContent =
+    `✅ To‘g‘ri: ${correct} | ❌ Xato: ${50 - correct}`;
+
+  document.getElementById("resultBox").classList.remove("hidden");
+}
+
+render();
+</script>
+</body>
+</html>
