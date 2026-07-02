@@ -127,83 +127,44 @@ class MemoryStore {
   }
 }
 
-// Try MongoDB first, fallback to memory
-let store;
-try {
-  const mongoose = require('mongoose');
-  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/agent-room';
+// ─── Store: Start with memory, try MongoDB upgrade in background ───
+let store = new MemoryStore();
+initDefaultAgents(); // Works with MemoryStore immediately
 
-  // MongoDB schemas
-  const agentSchema = new mongoose.Schema({
-    agentId: { type: String, unique: true, required: true },
-    name: String,
-    type: { type: String, enum: ['opencode', 'codebuff', 'custom', 'cli', 'ai-agent'], default: 'custom' },
-    status: { type: String, enum: ['online', 'offline', 'busy'], default: 'offline' },
-    skills: [String],
-    currentTask: { type: String, default: null },
-    taskHistory: [{ taskId: String, completedAt: Date }],
-    lastHeartbeat: { type: Date, default: Date.now },
-    metadata: { type: Object, default: {} }
-  }, { timestamps: true });
-
-  const taskSchema = new mongoose.Schema({
-    taskId: { type: String, unique: true, required: true },
-    title: String,
-    description: String,
-    project: String,
-    agentId: { type: String, default: null },
-    requiredSkills: [String],
-    type: { type: String, default: 'general' },
-    payload: { type: Object, default: {} },
-    status: { type: String, enum: ['queued', 'assigned', 'running', 'done', 'failed', 'cancelled'], default: 'queued' },
-    result: { type: Object, default: null },
-    priority: { type: Number, default: 0, min: 0, max: 10 },
-    createdBy: String,
-    assignedAt: Date,
-    completedAt: Date
-  }, { timestamps: true });
-
-  const logSchema = new mongoose.Schema({
-    type: String,
-    agentId: String,
-    taskId: String,
-    message: String,
-    metadata: { type: Object, default: {} }
-  }, { timestamps: true });
-
-  const Agent = mongoose.model('Agent', agentSchema);
-  const Task = mongoose.model('Task', taskSchema);
-  const RoomLog = mongoose.model('RoomLog', logSchema);
-
-  mongoose.connect(MONGODB_URI).then(() => {
+// Try MongoDB in background (non-blocking)
+setTimeout(async () => {
+  try {
+    const mongoose = require('mongoose');
+    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/agent-room';
+    const agentSchema = new mongoose.Schema({ agentId: { type: String, unique: true, required: true }, name: String, type: { type: String, enum: ['opencode', 'codebuff', 'custom', 'cli', 'ai-agent'], default: 'custom' }, status: { type: String, enum: ['online', 'offline', 'busy'], default: 'offline' }, skills: [String], currentTask: { type: String, default: null }, taskHistory: [{ taskId: String, completedAt: Date }], lastHeartbeat: { type: Date, default: Date.now }, metadata: { type: Object, default: {} } }, { timestamps: true });
+    const taskSchema = new mongoose.Schema({ taskId: { type: String, unique: true, required: true }, title: String, description: String, project: String, agentId: { type: String, default: null }, requiredSkills: [String], type: { type: String, default: 'general' }, payload: { type: Object, default: {} }, status: { type: String, enum: ['queued', 'assigned', 'running', 'done', 'failed', 'cancelled'], default: 'queued' }, result: { type: Object, default: null }, priority: { type: Number, default: 0 }, createdBy: String, assignedAt: Date, completedAt: Date }, { timestamps: true });
+    const logSchema = new mongoose.Schema({ type: String, agentId: String, taskId: String, message: String, metadata: { type: Object, default: {} } }, { timestamps: true });
+    const Agent = mongoose.model('Agent', agentSchema);
+    const Task = mongoose.model('Task', taskSchema);
+    const RoomLog = mongoose.model('RoomLog', logSchema);
+    await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000, connectTimeoutMS: 5000 });
     console.log(`✅ MongoDB connected: ${MONGODB_URI}`);
-    initDefaultAgents();
-  }).catch(err => {
-    console.error('❌ MongoDB connection error:', err.message);
-    console.log('⚠️ Falling back to in-memory store');
-  });
-
-  // MongoDB adapter
-  store = {};
-  store.findAgent = (filter) => Agent.find(filter).sort({ status: 1, name: 1 });
-  store.findOneAgent = (filter) => Agent.findOne(filter);
-  store.upsertAgent = (agentId, data) => Agent.findOneAndUpdate(
-    { agentId }, { ...data, lastHeartbeat: new Date() }, { upsert: true, new: true }
-  );
-  store.updateAgent = (agentId, data) => Agent.findOneAndUpdate({ agentId }, data, { new: true });
-  store.countAgents = (filter = {}) => Agent.countDocuments(filter);
-  store.createTask = (data) => Task.create(data);
-  store.findTasks = (filter) => Task.find(filter).sort({ priority: -1, createdAt: -1 });
-  store.findOneTask = (taskId) => Task.findOne({ taskId });
-  store.updateTask = (taskId, data) => Task.findOneAndUpdate({ taskId }, data, { new: true });
-  store.countTasks = (filter = {}) => Task.countDocuments(filter);
-  store.addLog = (entry) => RoomLog.create(entry);
-  store.findLogs = (filter, limit = 100) => RoomLog.find(filter).sort({ createdAt: -1 }).limit(limit);
-} catch (err) {
-  console.log('⚠️ MongoDB not available, using in-memory store');
-  store = new MemoryStore();
-  initDefaultAgents();
-}
+    // Upgrade store to MongoDB
+    const mongoStore = {};
+    mongoStore.findAgent = (filter) => Agent.find(filter).sort({ status: 1, name: 1 });
+    mongoStore.findOneAgent = (filter) => Agent.findOne(filter);
+    mongoStore.upsertAgent = (agentId, data) => Agent.findOneAndUpdate({ agentId }, { ...data, lastHeartbeat: new Date() }, { upsert: true, returnDocument: 'after' });
+    mongoStore.updateAgent = (agentId, data) => Agent.findOneAndUpdate({ agentId }, data, { returnDocument: 'after' });
+    mongoStore.countAgents = (filter = {}) => Agent.countDocuments(filter);
+    mongoStore.createTask = (data) => Task.create(data);
+    mongoStore.findTasks = (filter) => Task.find(filter).sort({ priority: -1, createdAt: -1 });
+    mongoStore.findOneTask = (taskId) => Task.findOne({ taskId });
+    mongoStore.updateTask = (taskId, data) => Task.findOneAndUpdate({ taskId }, data, { returnDocument: 'after' });
+    mongoStore.countTasks = (filter = {}) => Task.countDocuments(filter);
+    mongoStore.addLog = (entry) => RoomLog.create(entry);
+    mongoStore.findLogs = (filter, lim = 100) => RoomLog.find(filter).sort({ createdAt: -1 }).limit(lim);
+    store = mongoStore;
+    await initDefaultAgents(); // Re-register agents in MongoDB
+  } catch (err) {
+    if (err.code !== 'MODULE_NOT_FOUND') console.error('⚠️ MongoDB unavailable, staying on memory store:', err.message);
+    else console.log('⚠️ MongoDB package not installed, staying on memory store');
+  }
+}, 100); // 100ms delay so server starts first
 
 // ─── Helper: Skill-based task routing ───────────────────────
 
