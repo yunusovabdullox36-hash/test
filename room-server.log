@@ -1,0 +1,4 @@
+◇ injected env (3) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+✅ MongoDB connected: mongodb://localhost:27017/agent-room
+🏠 Room Server running on http://localhost:4000
+🔌 WebSocket ready on ws://localhost:4000
